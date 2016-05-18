@@ -234,24 +234,18 @@ def parseCommand(buff, cl):
       dest  = checkDestroyed(shipMap, xy)
     else:
       dest = 0
-    sent = cl.send("R, {}, {}".format(state, dest))   # Returns R, then if it was a hit and if the ship was destroyed
-    if (sent == 0):
-      raise "ERROR> Sending B result failed"
+    res = saveSend(cls, "R, {}, {}".format(state, dest))   # Returns R, then if it was a hit and if the ship was destroyed
     return  'B', [xy[0], xy[1], state, dest]
     
   elif buff[0] == 'M':
     state = max(1, shipMap[xy[0], xy[1]])
     if (state == 1): state = 0              # This way the bot can not derive the real state via runtime analysis
-    sent = cl.send("R, {}".format(state))
-    if (sent == 0):
-      raise "ERROR> Sending M result failed"
+    res = saveSend(cls, "R, {}".format(state))
     return  'M', [xy[0], xy[1], state]
 
   else:
     # Invalid command
-    cl.send("I")
-    if (sent == 0):
-      raise "ERROR> Sending invalid flag"
+    res = saveSend(cls, "I")
     return 'I', -1
 ################################################################################
 

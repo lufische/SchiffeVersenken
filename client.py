@@ -67,7 +67,9 @@ def mapRequest(sock, x, y):
   # time.sleep(0.01)
   buff = sock.recv(1024)        # Get Result
   splittedBuff = buff.split(',')
-  if   splittedBuff[0] == 'I': print('ERROR> Invalid Command')
+  if   splittedBuff[0] == 'I': 
+    print('ERROR> Invalid Command')
+    return -1
   elif splittedBuff[0] == 'R':
     try:    res = int(splittedBuff[1])
     except:
@@ -79,6 +81,7 @@ def mapRequest(sock, x, y):
     print("Turn not initialated")
     return -1
   else:
+    print(">>>" + buff)
     raise "ERROR> Unexpected server string"
       
       
@@ -98,7 +101,9 @@ def bomb(sock, x, y):
   # =============================== PARSE INPUT ================================+
   buff = sock.recv(1024)        # Get Result
   splittedBuff = buff.split(',')
-  if   splittedBuff[0] == 'I': print('ERROR> Invalid Command')
+  if   splittedBuff[0] == 'I': 
+    print('ERROR> Invalid Command')
+    return -1, -1
   elif splittedBuff[0] == 'R':
     try:    
       res = int(splittedBuff[1])
@@ -128,26 +133,50 @@ if (res == 0):
   raise "ERROR> Connection could not be established"
 
 
+# ============================= INIT BOT =======================================
+# You can init your bot here
+def botRound(sock):
+  i = 0
+  tileFound = False
+  while i<1000 and not(tileFound):
+    target = [np.random.randint(10), np.random.randint(10)]     # Draw random numbers
+    res = mapRequest(sock, target[0], target[1])                # Request map
+    if (res == 0):
+      tileFound = True
+  hit, dest = bomb(sock, target[0], target[1])                  # Bomb map
+  if (debug):
+    print("Bombed - Hit: {}, dest: {}".format(hit, dest))
+  # End bot Round
+
+
+
 # ============================ PLAY ROUND ======================================
+# Handshake concept:
+# Server:  Initiates turn with string "T"
+# Client:  Answers with string "Y"
+#
+# After that the client can send up to 999 map requests
+#       and can start one bomb
+# After bombing the client must reinitiate the new turn as described above
+#
+# The game is terminated from the server by sending the string "EOG".
+#
+# Please ensure, that all steps of the handshake is correctly implemented in 
+# the client. If that is not the case, you will run in an unsynced behaviour 
+# and therefore a dead-loop
+
 isEOG = False
 while not(isEOG):
-  buff = sock.recv(1024)        # Start Turn
+  buff = sock.recv(1024)        # Receive "T" string to start term
   if (buff == 'T'):
-    res = saveSend(sock, 'Y')
+    res = saveSend(sock, 'Y')   # Answer with string "Y"
+    # -------------------- START OF ROUND --------------------------------------
     if (debug):
-      print('====TURN===')
-    for i in range(1000):
-      target = [np.random.randint(10), np.random.randint(10)]
-      res = mapRequest(sock, target[0], target[1])
-      if (res == 0):    
-        hit, dest = bomb(sock, target[0], target[1])
-        if (debug):
-          print("Bombed - Hit: {}, dest: {}".format(hit, dest))
-        hit, dest = bomb(sock, 2, 2)
-        if (debug):
-          print("Bombed - Hit: {}, dest: {}".format(hit, dest))
-        break
+      print('==== TURN START ===')
+    # ---------------- IMPLEMENT YOUR BOT HERE ---------------------------------
+    botRound(sock)
   elif (buff == "EOG"):
+    print("End of game")
     isEOG = True
   elif (buff[0] == "N"):
     print("Unsynced client behaviour")
