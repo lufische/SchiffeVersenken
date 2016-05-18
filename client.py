@@ -183,58 +183,58 @@ if __name__=="__main__":
     raise "ERROR> Connection could not be established"
 
 
-# ============================= INIT BOT =======================================
-# You can init your bot here
-def botRound(sock): # THIS IS THE RANDOM BOT
-  i = 0
-  tileFound = False
-  shipMap = fieldRequest(sock)
-  if (np.min(shipMap) == -1):
-    raise "ERROR> Incomplete field request returned"
-    
-  while i<1000 and not(tileFound):
-    target = [np.random.randint(10), np.random.randint(10)]     # Draw random numbers
-    res = shipMap[target[0], target[1]]                         # Request map
-    if (res == 0):
-      tileFound = True
-    elif (debug):
-      print("Target position has allready been bombed - select new target")
-  hit, dest = bomb(sock, target[0], target[1])                  # Bomb map
-  if (debug):
-    print("Bombed - Hit: {}, dest: {}".format(hit, dest))
-  # End bot Round
-
-
-
-# ============================ PLAY ROUND ======================================
-# Handshake concept:
-# Server:  Initiates turn with string "T"
-# Client:  Answers with string "Y"
-#
-# After that the client can send up to 999 map requests
-#       and can start one bomb
-# After bombing the client must reinitiate the new turn as described above
-#
-# The game is terminated from the server by sending the string "EOG".
-#
-# Please ensure, that all steps of the handshake is correctly implemented in 
-# the client. If that is not the case, you will run in an unsynced behaviour 
-# and therefore a dead-loop
-
-isEOG = False
-while not(isEOG):
-  buff = sock.recv(2048)        # Receive "T" string to start term
-  if (buff == 'T'):
-    res = saveSend(sock, 'Y')   # Answer with string "Y"
-    # -------------------- START OF ROUND --------------------------------------
+  # ============================= INIT BOT =======================================
+  # You can init your bot here
+  def botRound(sock): # THIS IS THE RANDOM BOT
+    i = 0
+    tileFound = False
+    shipMap = fieldRequest(sock)
+    if (np.min(shipMap) == -1):
+      raise "ERROR> Incomplete field request returned"
+      
+    while i<1000 and not(tileFound):
+      target = [np.random.randint(10), np.random.randint(10)]     # Draw random numbers
+      res = shipMap[target[0], target[1]]                         # Request map
+      if (res == 0):
+        tileFound = True
+      elif (debug):
+        print("Target position has allready been bombed - select new target")
+    hit, dest = bomb(sock, target[0], target[1])                  # Bomb map
     if (debug):
-      print('==== TURN START ===')
-    # ---------------- IMPLEMENT YOUR BOT HERE ---------------------------------
-    botRound(sock)
-  elif (buff == "EOG"):
-    print("End of game")
-    isEOG = True
-  elif (buff[0] == "N"):
-    print("Unsynced client behaviour")
+      print("Bombed - Hit: {}, dest: {}".format(hit, dest))
+    # End bot Round
 
-sock.close()                     # Close the socket when done
+
+
+  # ============================ PLAY ROUND ======================================
+  # Handshake concept:
+  # Server:  Initiates turn with string "T"
+  # Client:  Answers with string "Y"
+  #
+  # After that the client can send up to 999 map requests
+  #       and can start one bomb
+  # After bombing the client must reinitiate the new turn as described above
+  #
+  # The game is terminated from the server by sending the string "EOG".
+  #
+  # Please ensure, that all steps of the handshake is correctly implemented in 
+  # the client. If that is not the case, you will run in an unsynced behaviour 
+  # and therefore a dead-loop
+
+  isEOG = False
+  while not(isEOG):
+    buff = sock.recv(2048)        # Receive "T" string to start term
+    if (buff == 'T'):
+      res = saveSend(sock, 'Y')   # Answer with string "Y"
+      # -------------------- START OF ROUND --------------------------------------
+      if (debug):
+        print('==== TURN START ===')
+      # ---------------- IMPLEMENT YOUR BOT HERE ---------------------------------
+      botRound(sock)
+    elif (buff == "EOG"):
+      print("End of game")
+      isEOG = True
+    elif (buff[0] == "N"):
+      print("Unsynced client behaviour")
+
+  sock.close()                     # Close the socket when done
