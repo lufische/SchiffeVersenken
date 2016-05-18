@@ -13,7 +13,7 @@ The bots can communicate with the server via a socket connection. The server can
 The server itself creates random ship maps and terminates the game if all ships are destroyed.
 
 ## Dependencies
-Uses ''python'' for coding and ''sphinx'' for awesome looking documentations.
+Uses '''python''' for coding and ''sphinx'' for awesome looking documentations.
 
 ## The contest
 Everybody can implement their bot in client.py as function ''botRound'' and test the capability with the script ''looper.sh''.
