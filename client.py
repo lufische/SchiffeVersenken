@@ -11,11 +11,13 @@ debug = True
 ################################################################################
 def estConnection(host, port):
   """Establishes connection to the server
-  Input:
-    host:     Host Adress
-    port:     Port for connection
-  Return:
-    int success: 1 if successfull"""
+  
+  Args:
+    host(string):     Host Adress
+    port(int):     Port for connection
+    
+  Returns:
+    int: success: 1 if successfull"""
   sock = socket.socket()         # Create a socket object
   sock.connect((host, port))
   buff = sock.recv(1024)          # Handshake positive
@@ -31,10 +33,12 @@ def estConnection(host, port):
 def saveSend(sock, command):
   """Sends the command to the server and checks if the command
   was submitted correctly
-  Inout:
-    command:     string
-  Return:
-    int          successfull. Raises error if not."""
+  
+  Args:
+    command(string): command
+    
+  Returns:
+    int:          successfull. Raises error if not."""
   sent = sock.send(command)
   for i in range(10):
     if (sent < len(command)) and debug:
@@ -51,15 +55,17 @@ def saveSend(sock, command):
     
 def mapRequest(sock, x, y):
   """Sends map request and parses return
-  Input:
-    x:    Row position
-    y:    Col position
-  Return:
-    int   tile state at given position. The value corresponds to the 
+  
+  Args::
+    x(int):    Row position
+    y(int):    Col position
+    
+  Returns:
+    int:   tile state at given position. The value corresponds to the 
           state as follows:
-          0 - Unknown
-          2 - Allready bombed in a previous round
-          3 - Successfull hit in a previous round"""
+           * 0 - Unknown
+           * 2- Allready bombed in a previous round
+           * 3 - Successfull hit in a previous round"""
   # =============================== SEND COMMAND ================================
   res = saveSend(sock, "M, {}, {}".format(x, y))
 
@@ -86,12 +92,14 @@ def mapRequest(sock, x, y):
       
 def bomb(sock, x, y):
   """Sends bomb request and parses return
-  Input:
-    x:    Row position
-    y:    Col position
-  Return:
-    int   Hit (1) or not hit (0)
-    int   Ship destroyed (1) or not (0)"""
+  
+  Args:
+    x(int):    Row position
+    y(int):    Col position
+    
+  Returns:
+    int:   Hit (1) or not hit (0)
+    int:   Ship destroyed (1) or not (0)"""
   # =============================== SEND COMMAND ================================
   res = saveSend(sock, "B, {}, {}".format(x, y))
 
@@ -114,42 +122,42 @@ def bomb(sock, x, y):
   else:
     raise "ERROR> Unexpected server string"
     
+if __name__=="__main__":
+  ################################################################################
+  ###                                MAIN                                      ###
+  ################################################################################
 
-################################################################################
-###                                MAIN                                      ###
-################################################################################
-
-# ======================== CONNECT TO SERVER ===================================
-host = socket.gethostname() # Get local machine name
-port = 12345                # Reserve a port for your service.
-res, sock = estConnection(host, port)
-time.sleep(0.0005)
-if (res == 0):
-  raise "ERROR> Connection could not be established"
+  # ======================== CONNECT TO SERVER ===================================
+  host = socket.gethostname() # Get local machine name
+  port = 12345                # Reserve a port for your service.
+  res, sock = estConnection(host, port)
+  time.sleep(0.0005)
+  if (res == 0):
+    raise "ERROR> Connection could not be established"
 
 
-# ============================ PLAY ROUND ======================================
-isEOG = False
-while not(isEOG):
-  buff = sock.recv(1024)        # Start Turn
-  if (buff == 'T'):
-    res = saveSend(sock, 'Y')
-    if (debug):
-      print('====TURN===')
-    for i in range(1000):
-      target = [np.random.randint(10), np.random.randint(10)]
-      res = mapRequest(sock, target[0], target[1])
-      if (res == 0):    
-        hit, dest = bomb(sock, target[0], target[1])
-        if (debug):
-          print("Bombed - Hit: {}, dest: {}".format(hit, dest))
-        hit, dest = bomb(sock, 2, 2)
-        if (debug):
-          print("Bombed - Hit: {}, dest: {}".format(hit, dest))
-        break
-  elif (buff == "EOG"):
-    isEOG = True
-  elif (buff[0] == "N"):
-    print("Unsynced client behaviour")
+  # ============================ PLAY ROUND ======================================
+  isEOG = False
+  while not(isEOG):
+    buff = sock.recv(1024)        # Start Turn
+    if (buff == 'T'):
+      res = saveSend(sock, 'Y')
+      if (debug):
+        print('====TURN===')
+      for i in range(1000):
+        target = [np.random.randint(10), np.random.randint(10)]
+        res = mapRequest(sock, target[0], target[1])
+        if (res == 0):    
+          hit, dest = bomb(sock, target[0], target[1])
+          if (debug):
+            print("Bombed - Hit: {}, dest: {}".format(hit, dest))
+          hit, dest = bomb(sock, 2, 2)
+          if (debug):
+            print("Bombed - Hit: {}, dest: {}".format(hit, dest))
+          break
+    elif (buff == "EOG"):
+      isEOG = True
+    elif (buff[0] == "N"):
+      print("Unsynced client behaviour")
 
-sock.close                     # Close the socket when done
+  sock.close                     # Close the socket when done
