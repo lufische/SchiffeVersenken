@@ -11,13 +11,11 @@ debug = True
 ################################################################################
 def estConnection(host, port):
   """Establishes connection to the server
-  
-  Args:
-    host(string):     Host Adress
-    port(int):     Port for connection
-    
-  Returns:
-    int: success: 1 if successfull"""
+  Input:
+    host:     Host Adress
+    port:     Port for connection
+  Return:
+    int success: 1 if successfull"""
   sock = socket.socket()         # Create a socket object
   sock.connect((host, port))
   buff = sock.recv(1024)          # Handshake positive
@@ -33,12 +31,10 @@ def estConnection(host, port):
 def saveSend(sock, command):
   """Sends the command to the server and checks if the command
   was submitted correctly
-  
-  Args:
-    command(string): command
-    
-  Returns:
-    int:          successfull. Raises error if not."""
+  Inout:
+    command:     string
+  Return:
+    int          successfull. Raises error if not."""
   sent = sock.send(command)
   for i in range(10):
     if (sent < len(command)) and debug:
@@ -55,17 +51,15 @@ def saveSend(sock, command):
     
 def mapRequest(sock, x, y):
   """Sends map request and parses return
-  
-  Args::
-    x(int):    Row position
-    y(int):    Col position
-    
-  Returns:
-    int:   tile state at given position. The value corresponds to the 
+  Input:
+    x:    Row position
+    y:    Col position
+  Return:
+    int   tile state at given position. The value corresponds to the 
           state as follows:
-           * 0 - Unknown
-           * 2- Allready bombed in a previous round
-           * 3 - Successfull hit in a previous round"""
+          0 - Unknown
+          2 - Allready bombed in a previous round
+          3 - Successfull hit in a previous round"""
   # =============================== SEND COMMAND ================================
   res = saveSend(sock, "M, {}, {}".format(x, y))
 
@@ -95,14 +89,12 @@ def mapRequest(sock, x, y):
       
 def bomb(sock, x, y):
   """Sends bomb request and parses return
-  
-  Args:
-    x(int):    Row position
-    y(int):    Col position
-    
-  Returns:
-    int:   Hit (1) or not hit (0)
-    int:   Ship destroyed (1) or not (0)"""
+  Input:
+    x:    Row position
+    y:    Col position
+  Return:
+    int   Hit (1) or not hit (0)
+    int   Ship destroyed (1) or not (0)"""
   # =============================== SEND COMMAND ================================
   res = saveSend(sock, "B, {}, {}".format(x, y))
 
@@ -127,34 +119,18 @@ def bomb(sock, x, y):
   else:
     raise "ERROR> Unexpected server string"
     
-if __name__=="__main__":
-  ################################################################################
-  ###                                MAIN                                      ###
-  ################################################################################
 
-  # ======================== CONNECT TO SERVER ===================================
-  host = socket.gethostname() # Get local machine name
-  port = 12345                # Reserve a port for your service.
-  res, sock = estConnection(host, port)
-  time.sleep(0.0005)
-  if (res == 0):
-    raise "ERROR> Connection could not be established"
+################################################################################
+###                                MAIN                                      ###
+################################################################################
 
-
-# ============================= INIT BOT =======================================
-# You can init your bot here
-def botRound(sock):
-  i = 0
-  tileFound = False
-  while i<1000 and not(tileFound):
-    target = [np.random.randint(10), np.random.randint(10)]     # Draw random numbers
-    res = mapRequest(sock, target[0], target[1])                # Request map
-    if (res == 0):
-      tileFound = True
-  hit, dest = bomb(sock, target[0], target[1])                  # Bomb map
-  if (debug):
-    print("Bombed - Hit: {}, dest: {}".format(hit, dest))
-  # End bot Round
+# ======================== CONNECT TO SERVER ===================================
+host = socket.gethostname() # Get local machine name
+port = 12345                # Reserve a port for your service.
+res, sock = estConnection(host, port)
+time.sleep(0.0005)
+if (res == 0):
+  raise "ERROR> Connection could not be established"
 
 
 
@@ -174,15 +150,35 @@ def botRound(sock):
 # and therefore a dead-loop
 
 isEOG = False
+rndCounter = 0
 while not(isEOG):
   buff = sock.recv(1024)        # Receive "T" string to start term
   if (buff == 'T'):
     res = saveSend(sock, 'Y')   # Answer with string "Y"
     # -------------------- START OF ROUND --------------------------------------
+    rndCounter += 1
     if (debug):
-      print('==== TURN START ===')
+      print('==== TURN START ====')
     # ---------------- IMPLEMENT YOUR BOT HERE ---------------------------------
-    botRound(sock)
+    
+    if (rndCounter == 1):
+      # First test: Invalid request
+      if (mapRequest(sock, -1, 5) == -1):  res0="O"
+      else: res0="X"
+      if (mapRequest(sock,  0, 10) == -1): res1="O"
+      else: res1="X"
+      if (mapRequest(sock, -1, 10) == -1): res2="O"
+      else: res2="X"
+      if (mapRequest(sock,  4, 5) >= 0):   res3="O"
+      else: res3="X"
+      print("Test invalid requests: {}, {}, {}, {}".format(res0, res1, res2, res3))
+      
+      hit, dest = bomb(sock, -1, 0)
+      if (hit == -1) and (dest == -1): res0 = "O"
+      else: res0 = "X"
+      print("Test invalid bomb: {}".format(res0))
+    
+    
   elif (buff == "EOG"):
     print("End of game")
     isEOG = True
