@@ -14,12 +14,14 @@ visu  = False
 ###                        HELPER FUNCTIONS                                  ###
 ################################################################################
 def saveSend(sock, command):
-  """Sends the command to the server and checks if the command
+  """Sends the command to the server and checks if the commandY
   was submitted correctly
-  Inout:
-    command:     string
-  Return:
-    int          successfull. Raises error if not."""
+  
+  Args:
+    command(string): command
+    
+  Returns:
+    int:          successfull. Raises error if not."""
   sent = sock.send(command)
   for i in range(10):
     if (sent < len(command)) and debug:
@@ -36,19 +38,23 @@ def saveSend(sock, command):
 
 
 def setShipsRandom(shipMap):
-  """Place ships randomly on the map. The implemented rule ensures, that ships
+  """Place ships randomly on the map.
+  
+  The implemented rule ensures, that ships
   can be placed on the border, but are not allowed to touch (neither
   directly nor diagonally).
   All in all this function places
-    1 Aircraft carrier (length 5)
-    2 Battleships (length 4)
-    3 Destroyer (lenght 3)
-    4 Submarines (lenght 2)
-  Input: 
-    shipMap:    numpy.array (as reference, standard) specifying the ship
+    * 1 Aircraft carrier (length 5)
+    * 2 Battleships (length 4)
+    * 3 Destroyer (lenght 3)
+    * 4 Submarines (lenght 2)
+    
+  Args:
+    shipMap(numpy.array): (as reference, standard) specifying the ship
                 positions.
-    pl:         Player index
+    pl(int):         Player index
   """
+  
   # Note: The shipMap array is given as reference here and not as a copy
   #       Dependend on the position of the larger ships, it is possible
   #       that no space for the smaller ships is left. Therefore we just
@@ -107,14 +113,18 @@ def setShipsRandom(shipMap):
 
 def checkDestroyed(shipMap, xy):
   """Checks if bombing the position xy results in an ship to be sunk.
-  Input:
-    shipMap:    numpy.array (as reference, standard) specifying the state of
+  
+  Args:
+    shipMap(numpy.array): (as reference, standard) specifying the state of
                 each tile in a binary fassion:
                   0: Nothing
                   1: Undestroyed part of ship
                   2: Bombed water
                   3: Destroyed ship
-    xy:         list or numpy.array giving [Row, Column] of attack
+    xy(list or numpy.array): giving [Row, Column] of attack
+    
+  Returns:
+    bool: 
   """
   if (shipMap[xy[0], xy[1]]%2 == 0):
     # No hit at all
@@ -207,9 +217,10 @@ def checkDestroyed(shipMap, xy):
     
 def parseCommand(buff, cl):
   """Parse and handle client commands
-  Input:
-    buff:      String containing the command to be handled
-    cl:        Socket for client connection"""
+  
+  Args:
+    buff(string):      String containing the command to be handled
+    cl(socket):        Socket for client connection"""
   # ====================== SPLIT COMMAND IF NECESSARY ==========================
   if ((buff[0] == 'B') or (buff[0] == 'M')):
     # Position Command
@@ -258,66 +269,66 @@ def parseCommand(buff, cl):
 
 
 
+if __name__=="__main__":
+  ################################################################################
+  ###                           MAIN LOOP                                      ###
+  ################################################################################
 
-################################################################################
-###                           MAIN LOOP                                      ###
-################################################################################
+  # ========================= OPEN CONNECTION ====================================
+  s = socket.socket()         # Create a socket object
+  host = socket.gethostname() # Get local machine name
+  port = 12345                # Reserve a port for your service.
+  s.bind((host, port))        # Bind to the port
+  s.listen(1)                 # Now wait for 1 client connection.
+  cls, adds = s.accept()      # Establish connection with client.
 
-# ========================= OPEN CONNECTION ====================================
-s = socket.socket()         # Create a socket object
-host = socket.gethostname() # Get local machine name
-port = 12345                # Reserve a port for your service.
-s.bind((host, port))        # Bind to the port
-s.listen(1)                 # Now wait for 1 client connection.
-cls, adds = s.accept()      # Establish connection with client.
+  print 'Got connection from', adds
+  sent = saveSend(cls, 'Y - Thank you for connecting')
+  if (sent == 0):
+    # Handshake error
+    raise "ERROR> Handshake not successfull"
 
-print 'Got connection from', adds
-sent = saveSend(cls, 'Y - Thank you for connecting')
-if (sent == 0):
-  # Handshake error
-  raise "ERROR> Handshake not successfull"
-
-# =========================== PLACE SHIPS ======================================
-shipMap = np.zeros((10, 10), dtype=int)
-setShipsRandom(shipMap)
-print("All ships set")
-
-
-if (visu):
-  pp.imshow(shipMap, interpolation='None', vmin=0, vmax=3)
-  pp.xlim([-0.5, 9.5])
-  pp.ylim([-0.5, 9.5])
-  pp.show(0)
+  # =========================== PLACE SHIPS ======================================
+  shipMap = np.zeros((10, 10), dtype=int)
+  setShipsRandom(shipMap)
+  print("All ships set")
 
 
-for steps in range(1000):
-  saveSend(cls, "T")
-  buff = cls.recv(1024)
-  if (buff == 'Y'):
-    print("Round {}".format(steps))   
-    for i in range(1000):
-      buff = cls.recv(1024)
+  if (visu):
+    pp.imshow(shipMap, interpolation='None', vmin=0, vmax=3)
+    pp.xlim([-0.5, 9.5])
+    pp.ylim([-0.5, 9.5])
+    pp.show(0)
+
+
+  for steps in range(1000):
+    saveSend(cls, "T")
+    buff = cls.recv(1024)
+    if (buff == 'Y'):
+      print("Round {}".format(steps))   
+      for i in range(1000):
+        buff = cls.recv(1024)
+        if (debug):
+          print("Received command: " + buff)
+        act, result = parseCommand(buff, cls)
+        
+        if (act == 'B') and (visu):
+          pp.imshow(shipMap, interpolation='None', vmin=0, vmax=3)
+          pp.plot(result[1], result[0], 'ko')
+          pp.xlim([-0.5, 9.5])
+          pp.ylim([-0.5, 9.5])
+          pp.show()
+        if (act == 'B'): 
+          break
+    else:
       if (debug):
-        print("Received command: " + buff)
-      act, result = parseCommand(buff, cls)
-      
-      if (act == 'B') and (visu):
-        pp.imshow(shipMap, interpolation='None', vmin=0, vmax=3)
-        pp.plot(result[1], result[0], 'ko')
-        pp.xlim([-0.5, 9.5])
-        pp.ylim([-0.5, 9.5])
-        pp.show()
-      if (act == 'B'): 
-        break
-  else:
-    if (debug):
-      print("Received unexpected command")
-    saveSend(cls, "N")
-  
-  # Check if all ships are destroyed!
-  if ( min(shipMap[shipMap%2>0]) == 3 ):
-    break
-  
-cls.send("EOG")
-print("Finished after {} steps".format(steps))
-cls.close()                # Close the connection
+        print("Received unexpected command")
+      saveSend(cls, "N")
+    
+    # Check if all ships are destroyed!
+    if ( min(shipMap[shipMap%2>0]) == 3 ):
+      break
+    
+  cls.send("EOG")
+  print("Finished after {} steps".format(steps))
+  cls.close()                # Close the connection
