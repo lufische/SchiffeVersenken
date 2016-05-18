@@ -10,10 +10,12 @@ The bots can communicate with the server via a socket connection. The server can
 - bomb: Bomb selected field
 - requestField: Sends which fields have already been bombed
 - ...
-The server itself creates random ship maps and terminates the game if all ships are destroyed.
+The server itself creates random ship maps and terminates the game if all ships are destroyed. 
+
+To emphasize: This project is definitly a quick-and-dirty-style scripting!
 
 ## Dependencies
-Uses '''python''' for coding and ''sphinx'' for awesome looking documentations.
+Uses *python* for coding and *sphinx* for awesome looking documentations.
 
 ## The contest
 Everybody can implement their bot in *client.py* as function *botRound* and test the capability with the script *looper.sh*.
