@@ -6,7 +6,7 @@ import matplotlib.pyplot as pp
 import string as st
 import time
 
-debug = True
+debug = False
 visu  = False
 
 
@@ -24,10 +24,10 @@ def saveSend(sock, command):
     int:          successfull. Raises error if not."""
   sent = sock.send(command)
   for i in range(10):
-    if (sent < len(command)) and debug:
+    if (sent != len(command)) and debug:
       print('ERROR> During sending - Retry')
     else:
-      time.sleep(0.0005)
+      time.sleep(0.0005) # To maintain synchronisation
       return 1
   if (sent == 0):
     raise "ERROR> No communication with server possible"
@@ -272,6 +272,7 @@ if __name__=="__main__":
   s = socket.socket()         # Create a socket object
   host = socket.gethostname() # Get local machine name
   port = 12345                # Reserve a port for your service.
+  s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
   s.bind((host, port))        # Bind to the port
   s.listen(1)                 # Now wait for 1 client connection.
   cls, adds = s.accept()      # Establish connection with client.
@@ -297,11 +298,11 @@ if __name__=="__main__":
 
   for steps in range(1000):
     saveSend(cls, "T")
-    buff = cls.recv(1024)
+    buff = cls.recv(2048)
     if (buff == 'Y'):
       print("Round {}".format(steps))   
       for i in range(1000):
-        buff = cls.recv(1024)
+        buff = cls.recv(2048)
         if (debug):
           print("Received command: " + buff)
         act, result = parseCommand(buff, cls)
@@ -323,6 +324,6 @@ if __name__=="__main__":
     if ( min(shipMap[shipMap%2>0]) == 3 ):
       break
     
-  cls.send("EOG")
+  saveSend(cls, "EOG")
   print("Finished after {} steps".format(steps))
   cls.close()                # Close the connection
