@@ -4,7 +4,7 @@ import numpy as np
 import time
 
 
-debug = True
+debug = False
 
 ################################################################################
 ###                        HELPER FUNCTIONS                                  ###
@@ -20,7 +20,7 @@ def estConnection(host, port):
     int: success: 1 if successfull"""
   sock = socket.socket()         # Create a socket object
   sock.connect((host, port))
-  buff = sock.recv(1024)          # Handshake positive
+  buff = sock.recv(2048)          # Handshake positive
   if (buff[0] == 'Y'):
     # Handshake positive
     print(buff[1:])
@@ -41,10 +41,10 @@ def saveSend(sock, command):
     int:          successfull. Raises error if not."""
   sent = sock.send(command)
   for i in range(10):
-    if (sent < len(command)) and debug:
+    if (sent != len(command)) and debug:
       print('ERROR> During sending - Retry')
     else:      
-      time.sleep(0.0005)
+      time.sleep(0.0005) # To maintain synchronisation
       return 1
   if (sent == 0):
     raise "ERROR> No communication with server possible"
@@ -54,7 +54,7 @@ def saveSend(sock, command):
     
     
 def mapRequest(sock, x, y):
-  """Sends map request and parses return
+  """Sends map request and parses return. This is one tile of the field.
   
   Args::
     x(int):    Row position
@@ -70,8 +70,7 @@ def mapRequest(sock, x, y):
   res = saveSend(sock, "M, {}, {}".format(x, y))
 
   # =============================== PARSE INPUT ================================+
-  # time.sleep(0.01)
-  buff = sock.recv(1024)        # Get Result
+  buff = sock.recv(2048)        # Get Result
   splittedBuff = buff.split(',')
   if   splittedBuff[0] == 'I': 
     print('ERROR> Invalid Command')
@@ -93,6 +92,49 @@ def mapRequest(sock, x, y):
       
       
       
+      
+def fieldRequest(sock):
+  """Sends field request and parses return. This is the whole game field.
+  
+  Args::
+    x(int):    Row position
+    y(int):    Col position
+    
+  Returns:
+    int:   tile state for the complete field. The value corresponds to the 
+          state as follows:
+           * 0 - Unknown
+           * 2- Allready bombed in a previous round
+           * 3 - Successfull hit in a previous round"""
+  # =============================== SEND COMMAND ================================
+  res = saveSend(sock, "F")
+
+  # =============================== PARSE INPUT ================================+
+  buff = sock.recv(2048)        # Get Result
+  splittedBuff = buff.split(',')
+  if   splittedBuff[0] == 'I': 
+    print('ERROR> Invalid Command')
+    return -1
+  elif splittedBuff[0] == 'R':
+    shipMap = np.zeros((100,))-1
+    for i in range(100):
+      try: shipMap[i] = int(splittedBuff[1+i]) 
+      except:
+        raise "Error> Server returned non int result on Map request"
+        return shipMap.reshape(10, 10)
+    return shipMap.reshape(10, 10)
+  elif splittedBuff[0] == 'T' or splittedBuff[0] == 'N':
+    print("Turn not initialated")
+    return -1
+  else:
+    print(">>>" + buff)
+    raise "ERROR> Unexpected server string"
+
+
+
+
+      
+      
 def bomb(sock, x, y):
   """Sends bomb request and parses return
   
@@ -107,7 +149,7 @@ def bomb(sock, x, y):
   res = saveSend(sock, "B, {}, {}".format(x, y))
 
   # =============================== PARSE INPUT ================================+
-  buff = sock.recv(1024)        # Get Result
+  buff = sock.recv(2048)        # Get Result
   splittedBuff = buff.split(',')
   if   splittedBuff[0] == 'I': 
     print('ERROR> Invalid Command')
@@ -146,11 +188,17 @@ if __name__=="__main__":
 def botRound(sock):
   i = 0
   tileFound = False
+  shipMap = fieldRequest(sock)
+  if (np.min(shipMap) == -1):
+    raise "ERROR> Incomplete field request returned"
+    
   while i<1000 and not(tileFound):
     target = [np.random.randint(10), np.random.randint(10)]     # Draw random numbers
-    res = mapRequest(sock, target[0], target[1])                # Request map
+    res = shipMap[target[0], target[1]]                         # Request map
     if (res == 0):
       tileFound = True
+    elif (debug):
+      print("Target position has allready been bombed - select new target")
   hit, dest = bomb(sock, target[0], target[1])                  # Bomb map
   if (debug):
     print("Bombed - Hit: {}, dest: {}".format(hit, dest))
@@ -175,7 +223,7 @@ def botRound(sock):
 
 isEOG = False
 while not(isEOG):
-  buff = sock.recv(1024)        # Receive "T" string to start term
+  buff = sock.recv(2048)        # Receive "T" string to start term
   if (buff == 'T'):
     res = saveSend(sock, 'Y')   # Answer with string "Y"
     # -------------------- START OF ROUND --------------------------------------
@@ -189,4 +237,4 @@ while not(isEOG):
   elif (buff[0] == "N"):
     print("Unsynced client behaviour")
 
-sock.close                     # Close the socket when done
+sock.close()                     # Close the socket when done

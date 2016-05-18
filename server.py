@@ -215,6 +215,28 @@ def checkDestroyed(shipMap, xy):
     
     
     
+    
+def sendMap(cl):
+  """Sends complete map to client in the same fashion as on map request.
+  
+  Args:
+    cl(socket):        Socket for client connection
+    
+  Returns:
+    int:               Success of transmission"""
+  outString = "R, "
+  for el in shipMap.flatten():
+    state = max(1, el)
+    if (state == 1): state = 0              # This way the bot can not derive the real state via runtime analysis
+    outString += "{:d}, ".format(state)
+  res = saveSend(cl, outString)
+  return res
+    
+    
+    
+    
+    
+    
 def parseCommand(buff, cl):
   """Parse and handle client commands
   
@@ -254,10 +276,14 @@ def parseCommand(buff, cl):
     res = saveSend(cls, "R, {}".format(state))
     return  'M', [xy[0], xy[1], state]
 
+  elif buff[0] == 'F':
+    res = sendMap(cls)
+    return 'F', [res]
+
   else:
     # Invalid command
     res = saveSend(cls, "I")
-    return 'I', -1
+    return 'I', [-1]
 ################################################################################
 
 
