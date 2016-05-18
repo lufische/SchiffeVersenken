@@ -185,7 +185,7 @@ if __name__=="__main__":
 
 # ============================= INIT BOT =======================================
 # You can init your bot here
-def botRound(sock):
+def botRound(sock): # THIS IS THE RANDOM BOT
   i = 0
   tileFound = False
   shipMap = fieldRequest(sock)
