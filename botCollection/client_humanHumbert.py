@@ -8,7 +8,7 @@ import sys
 import os
 from PyQt4 import Qt
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
-import client
+from gameClass import *
 
 
 class RenderArea(QtGui.QWidget):
@@ -17,16 +17,11 @@ class RenderArea(QtGui.QWidget):
         super(RenderArea, self).__init__(parent)
         self.data = np.zeros((10,10))
 
-        host = socket.gethostname() # Get local machine name
-        port = 12345                # Reserve a port for your service.
-        res, self.sock = client.estConnection(host, port)
-        time.sleep(0.0005)
-        if res == 0:
-            raise Exception("ERROR> Connection could not be established")
-        self.EOG = False
-        buff = self.sock.recv(2048)
-        client.saveSend(self.sock, "Y")
-        self.data = client.fieldRequest(self.sock)
+        self.gInst = game()
+        gameState = self.gInst.initRound()
+        if (gameState != 1):
+          raise "ERROR> first round could not be initiated"
+        self.data = self.gInst.fieldRequest()
 
     def paintEvent(self, QPaintEvent):
         painter = QtGui.QPainter(self)
@@ -51,20 +46,20 @@ class RenderArea(QtGui.QWidget):
         j = y/50
         if self.data[i, j] != 0:
             return
-        client.bomb(self.sock, i, j)
-        buff = self.sock.recv(2048)
-        print buff
-        if buff == "EOG":
-            self.sock.close()
+        self.gInst.bomb(i, j)
+        gameState = self.gInst.initRound()
+
+        if gameState == 0:
+            self.gInst.closeConnection()
             self.data[i, j] = 3
             self.update()
             message = QtGui.QMessageBox(text="Spiel beendet")
             message.show()
             message.exec_()
             return
-        client.saveSend(self.sock,"Y")
-        self.data = client.fieldRequest(self.sock)
-        self.update()
+        else:
+            self.data = self.gInst.fieldRequest()
+            self.update()
 
 if __name__ == "__main__":
     a = Qt.QApplication(sys.argv)
