@@ -55,12 +55,12 @@ class RenderArea(QtGui.QWidget):
         buff = self.sock.recv(2048)
         print buff
         if buff == "EOG":
-            message = QtGui.QMessageBox(text="Spiel beendet")
-            message.show()
-            message.exec_()
             self.sock.close()
             self.data[i, j] = 3
             self.update()
+            message = QtGui.QMessageBox(text="Spiel beendet")
+            message.show()
+            message.exec_()
             return
         client.saveSend(self.sock,"Y")
         self.data = client.fieldRequest(self.sock)
