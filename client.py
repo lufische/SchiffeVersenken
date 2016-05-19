@@ -156,8 +156,8 @@ def bomb(sock, x, y):
     return -1, -1
   elif splittedBuff[0] == 'R':
     try:    
-      res = int(splittedBuff[1])
-      dest = int(splittedBuff[1])
+      res  = int(splittedBuff[1])
+      dest = int(splittedBuff[2])
     except:
       raise "Error> Server returned non int result on bomb request"
       return -1, -1
