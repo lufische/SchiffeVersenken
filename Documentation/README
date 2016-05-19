@@ -1,0 +1,37 @@
+How to Build the Documentation
+==============================
+
+The Documentation for this project is powered by sphinx, a tool that extracts the docstrings from 
+the python modules and presents them nicely.
+
+In order to build the documentation you obviously have to have the sphinx package (>=1.3) installed on your
+system. Because the version provided by some distributions (for example Open Suse 13.1) can be quite old, it
+is recomended to use the python package manager pip to install sphinx. 
+
+To install sphinx and the html theme used for this documentation run the commands
+
+pip install Sphinx
+pip install sphinx-rtd-theme
+
+If you don't have root privilages on your machine, you can provide pip with the option --user in order to install
+the package in your own home directory.
+
+
+
+If everything is up and runing you can run the command
+
+make html
+
+inside this directory to build the documentation.
+The result can be found in the _build/html directory (open index.html).
+
+
+Other Output Formats
+====================
+
+Sphinx can not only create html output, but also build the documentation in various other fromats like pdf (using LaTeX),
+epub, manpage, etc
+
+To list all available formats run 
+
+make help
