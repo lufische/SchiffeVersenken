@@ -28,14 +28,15 @@ class RenderArea(QtGui.QWidget):
         for i in range(10):
             for j in range(10):
                 if self.data[i, j] == 0:
-                    color = QtCore.Qt.blue
+                    color = QtCore.Qt.gray
                 elif self.data[i, j] == 1:
                     color = QtCore.Qt.yellow
                 elif self.data[i, j] == 2:
-                    color = QtCore.Qt.green
+                    color = QtCore.Qt.blue
                 elif self.data[i, j] == 3:
                     color = QtCore.Qt.red
                 painter.fillRect(QtCore.QRect(i*50, j*50, 50, 50), color)
+                painter.drawRect(QtCore.QRect(i*50, j*50, 50, 50))
 
     def mousePressEvent(self, QMouseEvent):
         x = QMouseEvent.pos().x()
