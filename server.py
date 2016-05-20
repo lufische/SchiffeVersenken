@@ -359,5 +359,5 @@ if __name__=="__main__":
       break
     
   saveSend(cls, "EOG")
-  print("Finished after {} steps".format(steps))
+  print("Finished after {} steps".format(steps+1))
   cls.close()                # Close the connection
