@@ -22,6 +22,7 @@ class RenderArea(QtGui.QWidget):
         if (gameState != 1):
           raise "ERROR> first round could not be initiated"
         self.data = self.gInst.fieldRequest()
+        self.round = 0
 
     def paintEvent(self, QPaintEvent):
         painter = QtGui.QPainter(self)
@@ -48,13 +49,14 @@ class RenderArea(QtGui.QWidget):
         if self.data[i, j] != 0:
             return
         self.gInst.bomb(i, j)
+        self.round += 1
         gameState = self.gInst.initRound()
 
         if gameState == 0:
             self.gInst.closeConnection()
             self.data[i, j] = 3
             self.update()
-            message = QtGui.QMessageBox(text="Spiel beendet")
+            message = QtGui.QMessageBox(text="Game finished in {0:d} rounds".format(self.round))
             message.show()
             message.exec_()
             return
