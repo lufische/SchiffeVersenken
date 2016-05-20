@@ -81,7 +81,7 @@ def setShipsRandom(shipMap):
         coord  = np.random.randint(10, size=2)
         orient = np.random.randint( 2, size=1)[0]
         # Check if ship fits in the game field
-        if (coord[orient] + shipLen < 10): 
+        if (coord[orient] + shipLen <= 10): 
           valid = True
         # Check if ship touches other ship
         selVert = [max(coord[0]-1, 0), min(coord[0]+(orient==0)*(shipLen-1)+2, 10)]
@@ -262,10 +262,18 @@ def parseCommand(buff, cl):
   # =========================== HANDLE AND REPLY ===============================
   if   buff[0] == 'B':
     state = shipMap[xy[0], xy[1]]%2
-    shipMap[xy[0], xy[1]] = state+2
     if (state):
+      # The diagonal neighbors of an hit are with certainty no hit
+      # --> Exclude them
+      xShape = np.column_stack( (xy[0] + np.array([-1, 0, 1, 1, -1]), 
+                                 xy[1] + np.array([-1, 0, -1, 1, 1])) )
+      xShapeSel   = np.logical_and( np.min(xShape, axis=1) >= 0, np.max(xShape, axis=1) <= 9)
+      xShapeState = shipMap[xShape[xShapeSel,0], xShape[xShapeSel,1]]
+      shipMap[xShape[xShapeSel,0], xShape[xShapeSel,1]] = xShapeState%2+2
+      # Check if ship is destroyed and if that is the case --> Exclude even more tiles
       dest  = checkDestroyed(shipMap, xy)
     else:
+      shipMap[xy[0], xy[1]] = state+2
       dest = 0
     res = saveSend(cls, "R, {}, {}".format(state, dest))   # Returns R, then if it was a hit and if the ship was destroyed
     return  'B', [xy[0], xy[1], state, dest]
