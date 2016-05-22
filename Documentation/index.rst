@@ -13,7 +13,7 @@ Contents:
     
    server.rst
    client.rst
-   
+   gameClass.rst   
    
 Indices and tables
 ==================
