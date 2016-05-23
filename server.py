@@ -1,13 +1,15 @@
 #!/usr/bin/python           # This is server.py file
 
-import socket               # Import socket module
-import numpy as np
-import matplotlib.pyplot as pp
-import string as st
-import time
-
 debug = False
 visu  = False
+
+import socket               # Import socket module
+import numpy as np
+import string as st
+import time
+if visu:
+  import matplotlib.pyplot as pp
+
 
 
 ################################################################################
@@ -234,6 +236,20 @@ def sendMap(cl):
     
     
     
+def excludeXShape(shipMap, xy):
+  """Excludes the neighboring diagonal elements from a hit element
+  
+  Args:
+    xy(array):        Position of the hit tile"""
+  if (shipMap[xy[0], xy[1]]%2 != 1):
+    raise "No valid exclusion"
+  xShape = np.column_stack( (xy[0] + np.array([-1, 0, 1, 1, -1]), 
+                             xy[1] + np.array([-1, 0, -1, 1, 1])) )
+  xShapeSel   = np.logical_and( np.min(xShape, axis=1) >= 0, np.max(xShape, axis=1) <= 9)
+  xShapeState = shipMap[xShape[xShapeSel,0], xShape[xShapeSel,1]]
+  shipMap[xShape[xShapeSel,0], xShape[xShapeSel,1]] = xShapeState%2+2
+    
+    
     
     
     
@@ -265,11 +281,7 @@ def parseCommand(buff, cl):
     if (state):
       # The diagonal neighbors of an hit are with certainty no hit
       # --> Exclude them
-      xShape = np.column_stack( (xy[0] + np.array([-1, 0, 1, 1, -1]), 
-                                 xy[1] + np.array([-1, 0, -1, 1, 1])) )
-      xShapeSel   = np.logical_and( np.min(xShape, axis=1) >= 0, np.max(xShape, axis=1) <= 9)
-      xShapeState = shipMap[xShape[xShapeSel,0], xShape[xShapeSel,1]]
-      shipMap[xShape[xShapeSel,0], xShape[xShapeSel,1]] = xShapeState%2+2
+      excludeXShape(shipMap, xy)      
       # Check if ship is destroyed and if that is the case --> Exclude even more tiles
       dest  = checkDestroyed(shipMap, xy)
     else:
