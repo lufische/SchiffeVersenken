@@ -1,2 +1,8 @@
 *.pyc
+*.so
 Documentation/_build*
+build/*
+client.c
+server.c
+gameClassOffline.c
+
