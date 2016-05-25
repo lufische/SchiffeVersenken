@@ -1,8 +1,13 @@
 #!/usr/bin/python           # This is client.py file
-import socket               # Import socket module
+
+# Flag to allow offline benchmarking (without server)
+offlineBenchmark = False
+
 import numpy as np
-import time
-from gameClass import *     # imports game class
+if (offlineBenchmark):
+  from gameClassOffline import *     # imports game class
+else:
+  from gameClass        import *     # imports game class
 
 
 # ============================= INIT BOT =======================================
