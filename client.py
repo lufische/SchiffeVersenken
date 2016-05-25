@@ -1,7 +1,7 @@
 #!/usr/bin/python           # This is client.py file
 
 # Flag to allow offline benchmarking (without server)
-offlineBenchmark = False
+offlineBenchmark = True
 
 import numpy as np
 if (offlineBenchmark):
@@ -34,7 +34,7 @@ def botRound(gInst): # THIS IS THE RANDOM BOT
 # End bot Round
 
 
-if __name__=="__main__":
+def main():
   gInst = game(debug=False)
 
   while not(gInst.isEOG):
@@ -42,3 +42,6 @@ if __name__=="__main__":
     if (roundStatus == 1):
       botRound(gInst)
   gInst.closeConnection()
+
+if __name__=="__main__":
+  main()
