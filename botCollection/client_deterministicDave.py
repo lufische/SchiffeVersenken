@@ -46,7 +46,7 @@ def searchShip(shipMap,oldX,oldY,lastSuccess):
   if lastSuccess==2:
     searchShip.status.addTile(oldX,oldY)
   size=searchShip.status.length()
-  direction=[1,0]
+  direction=[-1,0]
   cstate=1
   targetFound=False
   shipIndices=range(0,size)
@@ -80,45 +80,102 @@ def nextDirection(direction):
     newDirection[0]=direction[1]
   return newDirection
 
-def step(oldX,oldY,stepSize):
-  x=(oldX+1)%10
-  y=oldY+((oldX+1)/10)
-  return x,y
-  
 def dist(x,y):
   buf=0
   if len(x)!=len(y):
     return 1000
   for i in range(0,len(x)):
-    buf+=(x[i]-y[i])**2
+      buf+=np.power(abs(x[i]-y[i]),2)
   return buf
+
+def edgeDist(x):
+  minBuf=1000
+  for i in [-2,11]:
+    for j in range(0,10):
+      cDist=dist(x,[i,j])
+      if cDist<minBuf:
+        minBuf=cDist
+      cDist=dist(x,[j,i])
+      if cDist<minBuf:
+        minBuf=cDist
+  return minBuf
+
+def getFreePosition(shipMap):
+  maxPos=[-1,-1]
+  maxBuf=0
+  shipMapExtended=np.ones((12,12))
+  shipMapExtended[1:11,1:11]=shipMap
+  for i in range(1,11):
+    for j in range(1,11):
+      if shipMapExtended[i,j]==0:
+        cstate=0
+        localMaxBufJ=0
+        k=0
+        while cstate==0:
+          k+=1
+          if gInst.debug:
+            print("Getting distance from {},{} in dist {} (vert)".format(i,j,k))
+          if shipMapExtended[i,j+k]==0 or shipMapExtended[i,j-k]==0:
+            localMaxBufJ+=1
+          cstate=shipMapExtended[i,j+k]+shipMapExtended[i,j-k]
+        k=0
+        localMaxBufI=0
+        cstate=0
+        while cstate==0:
+          k+=1
+          if gInst.debug:
+            print("Getting distance from {},{} in dist {} (hor)".format(i,j,k))
+          if shipMapExtended[i+k,j]==0 or shipMapExtended[i-k,j]==0:
+            localMaxBufI+=1
+          cstate=shipMapExtended[i+k,j]+shipMapExtended[i-k,j]          
+        if localMaxBufI<localMaxBufJ:
+          localMaxBuf=localMaxBufJ
+        else:
+          localMaxBuf=localMaxBufI
+        if localMaxBuf>maxBuf:
+          maxBuf=localMaxBuf
+          maxPos=[i-1,j-1]
+  return maxPos
 
 def getNewTarget(shipMap):
   maxBuf=-1
   cPos=[-1,-1]
   hitPos=[]
   minPos=cPos
-  for i in range(0,10):
-    for j in range(0,10):
-      if shipMap[i,j]!=0:
-        hitPos.append([i,j])
-  for k in range(0,10):
-    for l in range(0,10):
-      minBuf=1000
-      for a in hitPos:
-        b=[k,l]
-        cDist=dist(a,b)
-        if(cDist<minBuf):
-          minBuf=cDist
-          cPos=b
-      if minBuf>maxBuf:
-        minPos=cPos
-        maxBuf=minBuf
-  if gInst.debug:
-    print("Maximal distance: {} with position {},{}".format(maxBuf,minPos[0],minPos[1]))
-  return minPos        
+  if getNewTarget.fullField==False:
+    for i in range(0,10):
+      for j in range(0,10):
+        if shipMap[i,j]!=0:
+          hitPos.append([i,j])
+    for k in range(0,10):
+      for l in range(0,10):
+        minBuf=1000
+        for a in hitPos:
+          b=[k,l]
+          cDist=dist(a,b)
+          if(cDist<minBuf):
+            minBuf=cDist
+            cPos=b
+        eDist=edgeDist(b)
+        if eDist<minBuf:
+          minBuf=eDist
+        if gInst.debug:
+              print("At point {},{} -distance from the edge: {}".format(b[0],b[1],eDist))
+        if minBuf>maxBuf:
+          minPos=cPos
+          maxBuf=minBuf
+    if gInst.debug:
+      print("Maximal distance: {} with position {},{}".format(maxBuf,minPos[0],minPos[1]))
+    if maxBuf<=1:
+      getNewTarget.fullField=True
+      return getFreePosition(shipMap)
+    else:
+      return minPos
+  else:
+    return getFreePosition(shipMap)
+    
+getNewTarget.fullField=False
             
-
 initialPos=[4,4]
 
 def botRound(gInst): # THIS IS THE DETERMINISTIC BOT
@@ -183,3 +240,4 @@ if __name__=="__main__":
       numHits+=1
   print("Number of shots: {}".format(numHits))
   gInst.closeConnection()
+
